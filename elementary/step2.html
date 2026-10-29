@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<title>STEP2 グループをかぞえよう｜探究テーマ発見ワークシート（小学生版）</title>
+<link rel="stylesheet" href="../style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <div id="app-header"></div>
+
+  <div class="card">
+    <h2>STEP2　点数をたしてかぞえよう！</h2>
+    <p class="lead">グループごとに点数をたしたよ。六角形が大きくのびているところに注目してみよう。</p>
+    <div id="pdf-area-step2">
+      <p class="hint" id="profile-line" style="text-align:center;"></p>
+      <div class="hexagon-wrap"><div id="hexagon" class="hex-box"></div></div>
+      <div class="top-cats" id="top-cats"></div>
+    </div>
+    <p class="hint" style="text-align:center;">※同じ数がいくつあってもOK！</p>
+    <div class="final-actions">
+      <button type="button" class="btn btn-ghost" id="pdf-btn">グラフをPDFでダウンロード</button>
+    </div>
+  </div>
+
+  <div id="nav"></div>
+</div>
+
+<script src="../app.js"></script>
+<script>
+  renderHeader(2, { labels: ES_STEP_LABELS, total: ES_STEP_LABELS.length - 1 });
+  const state = esLoadState();
+  if (!state.scores) goTo("step1.html");
+
+  renderHexagon(document.getElementById("hexagon"), state.scores, { maxVal: 10, categories: ES_CATEGORIES });
+
+  document.getElementById("profile-line").textContent =
+    `名前：${state.profile.name || "-"}　学年：${state.profile.grade || "-"}　日付：${state.profile.date || "-"}`;
+
+  const top1 = topCategories(state.scores, 1)[0];
+  document.getElementById("top-cats").innerHTML =
+    `いちばん多かったグループ：${esCatLabel(top1.key)}（${top1.score}点）`;
+
+  document.getElementById("pdf-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("pdf-btn");
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = "作成中...";
+    const namePart = state.profile.name ? state.profile.name.replace(/\s+/g, "") : "result";
+    try {
+      await elementToPdf(document.getElementById("pdf-area-step2"), `探究テーマ_小学生版グラフ_${namePart}.pdf`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
+
+  navButtons("nav", {
+    prevHref: "step1.html",
+    nextLabel: "次へ →",
+    onNext: () => goTo("step3.html")
+  });
+</script>
+</body>
+</html>
