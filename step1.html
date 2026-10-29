@@ -14,7 +14,7 @@
 
   <div class="card">
     <h2>STEP1　直感チェック：何に「気になる」が向く？</h2>
-    <p class="lead">30個の文について、1（興味ない）〜5（興味ある）で直感的に選んでください。</p>
+    <p class="lead">30個の文について、1（あてはまらない）〜5（あてはまる）で直感的に選んでください。</p>
   </div>
 
   <div class="card" id="questions"></div>
@@ -35,7 +35,7 @@
         ${[1,2,3,4,5].map(v => `
           <label>
             <input type="radio" name="q${q.id}" value="${v}" ${Number(state.answers[q.id]) === v ? "checked" : ""}>
-            <span class="opt"><span class="num">${v}</span>${v === 1 ? "興味ない" : v === 5 ? "興味ある" : ""}</span>
+            <span class="opt"><span class="num">${v}</span>${v === 1 ? "あてはまらない" : v === 5 ? "あてはまる" : ""}</span>
           </label>
         `).join("")}
       </div>

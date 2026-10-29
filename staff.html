@@ -57,14 +57,14 @@
       listEl.innerHTML = records.map((record, i) => `
         <div class="student-row" data-idx="${i}">
           <div>
-            <div class="name">${record.名前 || "(名前なし)"}</div>
+            <div class="name">${record.名前 || "(名前なし)"}${record.トラック ? `（${record.トラック}）` : ""}</div>
             <div class="meta">学年：${record.学年 || "-"}　日付：${record.日付 || "-"}</div>
           </div>
           <div class="meta">キーワード：${record.キーワード || "-"}</div>
         </div>
         <div class="detail-panel" id="detail-${i}">
           <p class="hint" id="detail-profile-${i}"></p>
-          <div class="hexagon-wrap"><div id="hexagon-${i}" style="width:280px;height:280px;"></div></div>
+          <div class="hexagon-wrap"><div id="hexagon-${i}" class="hex-box hex-box-sm"></div></div>
           <div class="summary-box">${(record.サマリー || "").replace(/</g, "&lt;")}</div>
         </div>
       `).join("");
@@ -77,7 +77,11 @@
           if (!isOpen) {
             panel.classList.add("open");
             if (!panel.dataset.rendered) {
-              renderHexagon(document.getElementById(`hexagon-${i}`), scoresFromRecord(record));
+              const isES = record.トラック === "小学生";
+              renderHexagon(document.getElementById(`hexagon-${i}`), scoresFromRecord(record), {
+                maxVal: isES ? 10 : 25,
+                categories: isES ? ES_CATEGORIES : CATEGORIES
+              });
               panel.dataset.rendered = "1";
             }
           }

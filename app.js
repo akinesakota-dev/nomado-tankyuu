@@ -145,6 +145,165 @@ const CHECKLIST_ITEMS = [
 
 const STEP_LABELS = ["はじめに","STEP1 直感チェック","STEP2 興味の方向","STEP3 キーワード","STEP4 掘り下げ","STEP5 問いづくり","STEP6 仕上げ"];
 
+/* ============================================================
+   小学生向け（探究テーマ発見ワークシート・小学生版）
+   ============================================================ */
+
+const ES_CATEGORIES = [
+  { key: "A", name: "人・社会", color: "#ef4444", desc: "人の気もち、ルール、学校",
+    keywords: ["友だち","家族","学校","ルール","気もち","なかよくする方法"] },
+  { key: "B", name: "自然・生きもの", color: "#22c55e", desc: "生きもの、体、天気、宇宙",
+    keywords: ["動物","虫","植物","人の体","ねむり","宇宙","天気","海"] },
+  { key: "C", name: "技術・しくみ", color: "#3b82f6", desc: "きかい、ゲーム、ものづくり",
+    keywords: ["ゲーム","ロボット","スマホ","AI","電車・車","たてもの","プログラミング"] },
+  { key: "D", name: "表現・文化", color: "#a855f7", desc: "絵、マンガ、音楽、ことば",
+    keywords: ["絵","マンガ","アニメ","音楽","本","ことば","外国語","ダンス"] },
+  { key: "E", name: "歴史・地域", color: "#f59e0b", desc: "むかし、自分の町、世界の国",
+    keywords: ["むかしのくらし","お城","おまつり","わたしの町","世界の国"] },
+  { key: "F", name: "生活・みらい", color: "#06b6d4", desc: "食べもの、服、お店、お金",
+    keywords: ["食べもの","おかし","服","おうち","お金","お店","しごと","みらい"] }
+];
+
+// 12問（カテゴリはA,B,C,D,E,F の順で繰り返す）
+const ES_QUESTION_TEXTS = [
+  "人が「どうしてそうしたのかな？」と気になることがある。",
+  "生きものや、人の体のしくみを知るのがすき。",
+  "ゲームやきかいが「どうやって動いているのか」気になる。",
+  "絵・マンガ・音楽・動画を見たり、つくったりするのがすき。",
+  "むかしの人のくらしを想像するのがすき。",
+  "「もっとこうなったらべんりなのに」と思うことがある。",
+  "学校やみんなのルールを見て「どうしてこの決まりがあるの？」と思う。",
+  "天気・宇宙・地球のふしぎが気になる。",
+  "ものをつくったり、組み立てたりするのがすき。",
+  "ことば・外国語・方言のちがいがおもしろい。",
+  "自分の住んでいる町や、ほかの国のことが気になる。",
+  "食べもの・服・お店・お金のしくみが気になる。"
+];
+
+const ES_QUESTIONS = ES_QUESTION_TEXTS.map((text, i) => ({
+  id: i + 1,
+  text,
+  cat: CAT_ORDER[i % 6]
+}));
+
+const ES_STEP_LABELS = ["はじめに","STEP1 気になるチェック","STEP2 グループをかぞえよう","STEP3 ことばをあつめよう","STEP4 じぶんの気になるに"];
+
+const ES_STORAGE_KEY = "tankyuThemeWorksheetES_v1";
+
+function esDefaultState() {
+  return {
+    profile: { name: "", grade: "", date: "" },
+    answers: {},
+    scores: null,
+    keywords: { A: [], B: [], C: [], D: [], E: [], F: [] },
+    customKeywords: { A: "", B: "", C: "", D: "", E: "", F: "" },
+    step4: { keyword: "", curious: "", connection: "", wantToKnow: "" }
+  };
+}
+
+function esLoadState() {
+  try {
+    const raw = localStorage.getItem(ES_STORAGE_KEY);
+    if (!raw) return esDefaultState();
+    return Object.assign(esDefaultState(), JSON.parse(raw));
+  } catch (e) {
+    return esDefaultState();
+  }
+}
+
+function esSaveState(state) {
+  localStorage.setItem(ES_STORAGE_KEY, JSON.stringify(state));
+}
+
+function esResetState() {
+  localStorage.removeItem(ES_STORAGE_KEY);
+}
+
+function esComputeScores(answers) {
+  const scores = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+  ES_QUESTIONS.forEach(q => {
+    scores[q.cat] += Number(answers[q.id]) || 0;
+  });
+  return scores;
+}
+
+function esCategoryByKey(key) {
+  return ES_CATEGORIES.find(c => c.key === key);
+}
+
+function esCatLabel(key) {
+  return `${key} ${esCategoryByKey(key).name}`;
+}
+
+function buildSummaryTextES(state) {
+  const s = state;
+  const scoreLines = CAT_ORDER
+    .map(k => `  ${esCategoryByKey(k).name}：${s.scores ? s.scores[k] : "-"} / 10`)
+    .join("\n");
+  const kwLines = CAT_ORDER
+    .map(k => {
+      const list = (s.keywords[k] || []).concat(s.customKeywords[k] ? [s.customKeywords[k]] : []);
+      return list.length ? `  ${esCategoryByKey(k).name}：${list.join("、")}` : null;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  return [
+    `探究テーマ発見ワークシート（小学生版） 結果`,
+    `名前：${s.profile.name || "(未記入)"}　学年：${s.profile.grade || "-"}　日付：${s.profile.date || "-"}`,
+    ``,
+    `【グループごとの「はい」の数】`,
+    scoreLines,
+    ``,
+    `【気になったことば】`,
+    kwLines || "  （未選択）",
+    ``,
+    `【えらんだことば】${s.step4.keyword || "(未記入)"}`,
+    `  どこが気になる？：${s.step4.curious || "-"}`,
+    `  自分とのつながりは？：${s.step4.connection || "-"}`,
+    `  もっと知りたいこと：${s.step4.wantToKnow || "-"}`
+  ].join("\n");
+}
+
+function buildRecordES(state) {
+  const s = state;
+  const kwAll = CAT_ORDER
+    .flatMap(k => (s.keywords[k] || []).concat(s.customKeywords[k] ? [s.customKeywords[k]] : []))
+    .join("、");
+
+  return {
+    "名前": s.profile.name,
+    "学年": s.profile.grade,
+    "日付": s.profile.date,
+    "タイムスタンプ": new Date().toISOString(),
+    "トラック": "小学生",
+    "ScoreA": s.scores ? s.scores.A : "",
+    "ScoreB": s.scores ? s.scores.B : "",
+    "ScoreC": s.scores ? s.scores.C : "",
+    "ScoreD": s.scores ? s.scores.D : "",
+    "ScoreE": s.scores ? s.scores.E : "",
+    "ScoreF": s.scores ? s.scores.F : "",
+    "キーワード": kwAll,
+    "深掘りキーワード": s.step4.keyword,
+    "どこが気になる": s.step4.curious,
+    "自分との接点": s.step4.connection,
+    "もっと知りたいこと": s.step4.wantToKnow,
+    "問い1": "", "問い2": "", "問い3": "",
+    "チェックリスト": "",
+    "調べ方": "",
+    "最初の一歩": "",
+    "サマリー": buildSummaryTextES(s)
+  };
+}
+
+async function submitAnswerES(auth, state) {
+  return apiCall("submit_answer", {
+    name: auth.name,
+    password: auth.password,
+    record: buildRecordES(state)
+  });
+}
+
 /* ---------------- state ---------------- */
 
 function defaultState() {
@@ -206,17 +365,20 @@ function topCategories(scores, n) {
 
 /* ---------------- shared UI: header / nav ---------------- */
 
-function renderHeader(activeIndex) {
+function renderHeader(activeIndex, opts) {
+  opts = opts || {};
+  const labels = opts.labels || STEP_LABELS;
+  const total = opts.total !== undefined ? opts.total : labels.length - 1;
   const el = document.getElementById("app-header");
   if (!el) return;
-  const pct = Math.round((activeIndex / (STEP_LABELS.length - 1)) * 100);
+  const pct = Math.round((activeIndex / total) * 100);
   el.innerHTML = `
     <div class="header-inner">
       <h1 class="app-title">探求テーマ発見ワークシート</h1>
       <div class="progress-track">
         <div class="progress-fill" style="width:${pct}%"></div>
       </div>
-      <div class="progress-label">${STEP_LABELS[activeIndex]}（${activeIndex}/6）</div>
+      <div class="progress-label">${labels[activeIndex]}（${activeIndex}/${total}）</div>
     </div>`;
 }
 
@@ -247,6 +409,8 @@ function goTo(href) {
 
 function renderHexagon(containerEl, scores, opts) {
   opts = opts || {};
+  const categories = opts.categories || CATEGORIES;
+  const catByKey = key => categories.find(c => c.key === key);
   const size = opts.size || 320;
   const cx = size / 2, cy = size / 2;
   const maxVal = opts.maxVal || 25;
@@ -282,7 +446,7 @@ function renderHexagon(containerEl, scores, opts) {
   // data points
   CAT_ORDER.forEach((k, i) => {
     const [x, y] = pt(i, scores[k]);
-    const cat = categoryByKey(k);
+    const cat = catByKey(k);
     svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="${cat.color}" stroke="#fff" stroke-width="1.5"/>`;
   });
   // labels
@@ -290,9 +454,9 @@ function renderHexagon(containerEl, scores, opts) {
     const a = angleFor(i);
     const x = cx + labelRadius * Math.cos(a);
     const y = cy + labelRadius * Math.sin(a);
-    const cat = categoryByKey(k);
+    const cat = catByKey(k);
     const anchor = Math.cos(a) > 0.3 ? "start" : Math.cos(a) < -0.3 ? "end" : "middle";
-    svg += `<text x="${x}" y="${y - 6}" text-anchor="${anchor}" font-size="13" font-weight="700" fill="${cat.color}">${catLabel(k)}</text>`;
+    svg += `<text x="${x}" y="${y - 6}" text-anchor="${anchor}" font-size="13" font-weight="700" fill="${cat.color}">${k} ${cat.name}</text>`;
     svg += `<text x="${x}" y="${y + 10}" text-anchor="${anchor}" font-size="12" fill="#475569">${scores[k]} / ${maxVal}</text>`;
   });
 
@@ -381,6 +545,7 @@ function buildRecord(state) {
     "学年": s.profile.grade,
     "日付": s.profile.date,
     "タイムスタンプ": new Date().toISOString(),
+    "トラック": "中高生",
     "ScoreA": s.scores ? s.scores.A : "",
     "ScoreB": s.scores ? s.scores.B : "",
     "ScoreC": s.scores ? s.scores.C : "",

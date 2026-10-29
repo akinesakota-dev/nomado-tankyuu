@@ -12,15 +12,12 @@
 <div class="app">
   <div id="app-header"></div>
 
-  <div class="card">
-    <h2>ログイン</h2>
-    <p class="lead">生徒はスタッフから配られた名前とパスワードで、スタッフはスタッフ用パスワードでログインしてください。</p>
-    <div class="final-actions" style="margin-bottom:18px;">
-      <button type="button" class="btn btn-ghost" id="tab-student">生徒としてログイン</button>
-      <button type="button" class="btn btn-ghost" id="tab-staff">スタッフとしてログイン</button>
-    </div>
+  <div class="card login-card">
+    <button type="button" class="staff-link" id="toggle-staff">スタッフ用</button>
+    <h2 id="login-title">ログイン</h2>
 
     <div id="student-form">
+      <p class="lead">スタッフから配られた名前とパスワードを入力してください。</p>
       <label class="field">名前
         <input type="text" id="student-name" placeholder="例：山田 太郎">
       </label>
@@ -34,6 +31,7 @@
     </div>
 
     <div id="staff-form" style="display:none;">
+      <p class="lead">スタッフ用のログインです。</p>
       <label class="field">スタッフパスワード
         <input type="text" id="staff-password" placeholder="スタッフ共通パスワード">
       </label>
@@ -52,13 +50,15 @@
   const studentForm = document.getElementById("student-form");
   const staffForm = document.getElementById("staff-form");
 
-  document.getElementById("tab-student").addEventListener("click", () => {
-    studentForm.style.display = "block";
-    staffForm.style.display = "none";
-  });
-  document.getElementById("tab-staff").addEventListener("click", () => {
-    studentForm.style.display = "none";
-    staffForm.style.display = "block";
+  const toggleBtn = document.getElementById("toggle-staff");
+  const titleEl = document.getElementById("login-title");
+  let staffMode = false;
+  toggleBtn.addEventListener("click", () => {
+    staffMode = !staffMode;
+    studentForm.style.display = staffMode ? "none" : "block";
+    staffForm.style.display = staffMode ? "block" : "none";
+    toggleBtn.textContent = staffMode ? "生徒用に戻る" : "スタッフ用";
+    titleEl.textContent = staffMode ? "スタッフログイン" : "ログイン";
   });
 
   document.getElementById("student-login-btn").addEventListener("click", async () => {
@@ -76,7 +76,7 @@
     btn.disabled = false;
     if (result.ok) {
       sessionStorage.setItem(AUTH_KEY_STUDENT, JSON.stringify({ name, password }));
-      goTo("index.html");
+      goTo("choose.html");
     } else {
       errorEl.textContent = result.error || "ログインできませんでした。";
     }
