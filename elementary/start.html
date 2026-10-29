@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/jpeg" href="../favicon.jpg">
+<title>探究テーマ発見ワークシート（小学生版）</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="app">
+  <div id="app-header"></div>
+
+  <div class="card">
+    <h2>「すき」や「気になる」から、しらべてみたいことを見つけよう！</h2>
+    <p class="lead">
+      よんで「ちょっとでも気になる」「すきかも」と思ったら、はいをえらんでね。
+      まよったら、あまり考えずに今の気もちでえらんでOKだよ。
+    </p>
+
+    <label class="field">名前
+      <input type="text" id="name" placeholder="例：山田 太郎">
+    </label>
+    <label class="field">学年
+      <input type="text" id="grade" placeholder="例：小学3年">
+    </label>
+    <label class="field">日付
+      <input type="date" id="date">
+    </label>
+  </div>
+
+  <div class="intro-buttons">
+    <button type="button" class="btn btn-primary" id="start-btn">はじめる →</button>
+  </div>
+  <div class="intro-buttons">
+    <a class="btn btn-ghost" href="../choose.html">← 戻る</a>
+  </div>
+</div>
+
+<script src="../app.js"></script>
+<script>
+  renderHeader(0, { labels: ES_STEP_LABELS, total: ES_STEP_LABELS.length - 1 });
+  const auth = requireStudentAuth();
+
+  if (auth) {
+    const state = esLoadState();
+    document.getElementById("name").value = auth.name;
+    document.getElementById("name").disabled = true;
+    document.getElementById("grade").value = state.profile.grade;
+    document.getElementById("date").value = state.profile.date || new Date().toISOString().slice(0, 10);
+
+    document.getElementById("start-btn").addEventListener("click", () => {
+      state.profile.name = auth.name;
+      state.profile.grade = document.getElementById("grade").value.trim();
+      state.profile.date = document.getElementById("date").value;
+      esSaveState(state);
+      goTo("step1.html");
+    });
+  }
+</script>
+</body>
+</html>
